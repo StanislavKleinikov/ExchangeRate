@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Курсы валют</string>
+    <string name="title_activity_settings">Настройка валют</string>
+
+    <!-- String related to menu -->
+
+    <string name="settings">Настройки</string>
+    <string name="save">Сохранить</string>
+
+</resources>
