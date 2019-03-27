@@ -142,21 +142,21 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
 
     private class CurrencyHolder extends RecyclerView.ViewHolder {
         private TextView mCharCodeTV;
-        private TextView mRateTV;
-        ImageView imageView;
+        private TextView mScaleTV;
+        private ImageView imageView;
         private Currency mCurrency;
 
         CurrencyHolder(LayoutInflater inflater, ViewGroup parent) {
-            super(inflater.inflate(R.layout.list_item_rate, parent, false));
+            super(inflater.inflate(R.layout.list_item_pref, parent, false));
             mCharCodeTV = itemView.findViewById(R.id.char_code_tv);
-            mRateTV = itemView.findViewById(R.id.rate_tv);
+            mScaleTV = itemView.findViewById(R.id.scale_tv);
             imageView = itemView.findViewById(R.id.anchor_iv);
         }
 
         void bind(Currency currency) {
             mCurrency = currency;
             mCharCodeTV.setText(mCurrency.getName());
-            mRateTV.setText(String.format(getString(R.string.format_rate),
+            mScaleTV.setText(String.format(getString(R.string.format_scale),
                     currency.getScale(), currency.getName()));
 
         }

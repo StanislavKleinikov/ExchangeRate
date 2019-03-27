@@ -1,5 +1,7 @@
 package stanislav.kleinikov.exchangerate.domain;
 
+import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+
 import org.simpleframework.xml.convert.AnnotationStrategy;
 import org.simpleframework.xml.core.Persister;
 
@@ -15,8 +17,9 @@ public class NetworkService {
         mRetrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(
-                        SimpleXmlConverterFactory.create(
+                        SimpleXmlConverterFactory.createNonStrict(
                                 new Persister(new AnnotationStrategy())))
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();
     }
 
