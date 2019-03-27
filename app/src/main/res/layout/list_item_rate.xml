@@ -7,7 +7,7 @@
     android:background="@android:color/white">
 
     <TextView
-        android:id="@+id/name"
+        android:id="@+id/char_code_tv"
         android:layout_width="182dp"
         android:layout_height="26dp"
         android:layout_marginStart="4dp"
@@ -16,36 +16,36 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Switch
-        android:id="@+id/rate_switch"
+        android:id="@+id/visibility_sw"
         android:layout_width="62dp"
         android:layout_height="24dp"
         android:layout_marginStart="48dp"
         android:layout_marginBottom="12dp"
-        app:layout_constraintBottom_toBottomOf="@+id/number"
-        app:layout_constraintStart_toEndOf="@+id/name" />
+        app:layout_constraintBottom_toBottomOf="@+id/rate_tv"
+        app:layout_constraintStart_toEndOf="@+id/char_code_tv" />
 
     <TextView
-        android:id="@+id/number"
+        android:id="@+id/rate_tv"
         android:layout_width="181dp"
         android:layout_height="29dp"
         android:layout_marginStart="8dp"
         android:clickable="false"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/name" />
+        app:layout_constraintTop_toBottomOf="@+id/char_code_tv" />
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/anchor_iv"
         android:layout_width="48dp"
         android:layout_height="42dp"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="8dp"
         android:scaleType="center"
         android:src="@drawable/ic_hamb"
-        app:layout_constraintBottom_toBottomOf="@+id/rate_switch"
+        app:layout_constraintBottom_toBottomOf="@+id/visibility_sw"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toEndOf="@+id/rate_switch"
-        app:layout_constraintTop_toTopOf="@+id/rate_switch"
+        app:layout_constraintStart_toEndOf="@+id/visibility_sw"
+        app:layout_constraintTop_toTopOf="@+id/visibility_sw"
         app:layout_constraintVertical_bias="0.533"
         tools:ignore="ContentDescription" />
 
