@@ -28,6 +28,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import stanislav.kleinikov.exchangerate.R;
 import stanislav.kleinikov.exchangerate.domain.Currency;
+import stanislav.kleinikov.exchangerate.domain.CurrencyBank;
 import stanislav.kleinikov.exchangerate.domain.DailyExRates;
 import stanislav.kleinikov.exchangerate.ui.settings.SettingActivity;
 
@@ -75,9 +76,10 @@ public class MainFragment extends Fragment {
                         }
 
                         @Override
-                        public void onNext(List<DailyExRates> s) {
+                        public void onNext(List<DailyExRates> list) {
                             Log.e(MainActivity.DEBUG_TAG, "ok");
-                            recyclerView.setAdapter(new CurrencyAdapter(s));
+                            CurrencyBank.getInstance().setDailyExRatesList(list);
+                            recyclerView.setAdapter(new CurrencyAdapter(list));
                         }
 
                         @Override
