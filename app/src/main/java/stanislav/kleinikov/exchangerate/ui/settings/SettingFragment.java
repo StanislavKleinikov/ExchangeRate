@@ -26,7 +26,6 @@ import java.util.List;
 
 import stanislav.kleinikov.exchangerate.R;
 import stanislav.kleinikov.exchangerate.domain.Currency;
-import stanislav.kleinikov.exchangerate.domain.DailyExRates;
 
 public class SettingFragment extends Fragment implements OnStartDragListener {
 
@@ -59,7 +58,7 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
         RecyclerView recyclerView = view.findViewById(R.id.setting_recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
-        CurrencyAdapter adapter = new CurrencyAdapter(DailyExRates.getInstance().getCurrencyList(), this);
+        CurrencyAdapter adapter = new CurrencyAdapter(null, this);
         recyclerView.setAdapter(adapter);
         CurrencyItemTouchCallback rateItemTouchCallback = new CurrencyItemTouchCallback(adapter);
         mHelper = new ItemTouchHelper(rateItemTouchCallback);

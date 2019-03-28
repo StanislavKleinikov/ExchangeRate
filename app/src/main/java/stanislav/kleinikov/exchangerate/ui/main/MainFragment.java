@@ -1,7 +1,6 @@
 package stanislav.kleinikov.exchangerate.ui.main;
 
 import android.annotation.SuppressLint;
-import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
@@ -20,11 +19,13 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 import stanislav.kleinikov.exchangerate.R;
 import stanislav.kleinikov.exchangerate.domain.Currency;
 import stanislav.kleinikov.exchangerate.domain.DailyExRates;
@@ -55,7 +56,8 @@ public class MainFragment extends Fragment {
         setHasOptionsMenu(true);
     }
 
-    @SuppressLint("SimpleDateFormat")
+    @SuppressLint("CheckResult")
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -64,13 +66,30 @@ public class MainFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.main_recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
 
-        MutableLiveData<List<DailyExRates>> exRateData = viewModel.getExRateData();
-        exRateData.observe(this, dailyExRates -> {
-            Log.e(MainActivity.DEBUG_TAG, dailyExRates == null ? null : String.valueOf(dailyExRates.size()));
-            recyclerView.setAdapter(new CurrencyAdapter(dailyExRates));
-        });
         if (savedInstanceState == null) {
-            viewModel.updateExRateData();
+            viewModel.updateExRateData().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                    .subscribeWith(new Observer<List<DailyExRates>>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
+
+                        }
+
+                        @Override
+                        public void onNext(List<DailyExRates> s) {
+                            Log.e(MainActivity.DEBUG_TAG, "ok");
+                            recyclerView.setAdapter(new CurrencyAdapter(s));
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            Log.e(MainActivity.DEBUG_TAG, "error");
+                        }
+
+                        @Override
+                        public void onComplete() {
+
+                        }
+                    });
         }
         return view;
     }
@@ -142,13 +161,12 @@ public class MainFragment extends Fragment {
         }
 
         void bind(Currency currency, BigDecimal rate) {
-            Log.e(MainActivity.DEBUG_TAG, currency.toString());
             mCurrency = currency;
             mCharCodeTV.setText(mCurrency.getCharCode());
             mScaleTV.setText(String.format(getString(R.string.format_scale),
                     currency.getScale(), currency.getName()));
-            mFirstRateTV.setText(String.format(Locale.getDefault(),"%.4f", currency.getRate()));
-            mSecondRateTV.setText(String.format(Locale.getDefault(),"%.4f",rate));
+            mFirstRateTV.setText(String.format(Locale.getDefault(), "%.4f", currency.getRate()));
+            mSecondRateTV.setText(String.format(Locale.getDefault(), "%.4f", rate));
         }
     }
 }
