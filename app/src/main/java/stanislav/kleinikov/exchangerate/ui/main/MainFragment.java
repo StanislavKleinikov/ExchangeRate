@@ -1,11 +1,15 @@
 package stanislav.kleinikov.exchangerate.ui.main;
 
 import android.annotation.SuppressLint;
+import android.arch.lifecycle.MutableLiveData;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -13,19 +17,19 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import stanislav.kleinikov.exchangerate.R;
+import stanislav.kleinikov.exchangerate.domain.Currency;
 import stanislav.kleinikov.exchangerate.domain.DailyExRates;
-import stanislav.kleinikov.exchangerate.domain.NetworkService;
 import stanislav.kleinikov.exchangerate.ui.settings.SettingActivity;
 
-import static stanislav.kleinikov.exchangerate.domain.NbrbApi.PATTERN_DATE;
 
 public class MainFragment extends Fragment {
 
@@ -56,24 +60,21 @@ public class MainFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
+        MainViewModel viewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        RecyclerView recyclerView = view.findViewById(R.id.main_recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
 
-        NetworkService.getInstance()
-                .getNbrbApi()
-                .loadDailyRates(new SimpleDateFormat(PATTERN_DATE).format(new Date()))
-                .enqueue(new Callback<DailyExRates>() {
-                    @Override
-                    public void onResponse(@NonNull Call<DailyExRates> call, @NonNull Response<DailyExRates> response) {
-                        Log.e(MainActivity.DEBUG_TAG, response.body().getDate());
-                    }
-
-                    @Override
-                    public void onFailure(@NonNull Call<DailyExRates> call, @NonNull Throwable t) {
-                        Log.e(MainActivity.DEBUG_TAG, "error");
-                        t.printStackTrace();
-                    }
-                });
+        MutableLiveData<List<DailyExRates>> exRateData = viewModel.getExRateData();
+        exRateData.observe(this, dailyExRates -> {
+            Log.e(MainActivity.DEBUG_TAG, dailyExRates == null ? null : String.valueOf(dailyExRates.size()));
+            recyclerView.setAdapter(new CurrencyAdapter(dailyExRates));
+        });
+        if (savedInstanceState == null) {
+            viewModel.updateExRateData();
+        }
         return view;
     }
+
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -90,6 +91,64 @@ public class MainFragment extends Fragment {
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private class CurrencyAdapter extends RecyclerView.Adapter<CurrencyHolder> {
+
+        private DailyExRates mFirstDailyExRate;
+        private DailyExRates mSecondDailyExRate;
+
+        private CurrencyAdapter(List<DailyExRates> list) {
+            mFirstDailyExRate = list.get(0);
+            mSecondDailyExRate = list.get(1);
+        }
+
+
+        @NonNull
+        @Override
+        public CurrencyHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+            LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
+            return new CurrencyHolder(layoutInflater, viewGroup);
+        }
+
+        @SuppressLint("ClickableViewAccessibility")
+        @Override
+        public void onBindViewHolder(@NonNull CurrencyHolder currencyHolder, int i) {
+            Currency currency = mFirstDailyExRate.getCurrencyList().get(i);
+            BigDecimal rate = mSecondDailyExRate.getCurrencyList().get(i).getRate();
+            currencyHolder.bind(currency, rate);
+        }
+
+        @Override
+        public int getItemCount() {
+            return mFirstDailyExRate.getCurrencyList().size();
+        }
+    }
+
+    private class CurrencyHolder extends RecyclerView.ViewHolder {
+        private TextView mCharCodeTV;
+        private TextView mScaleTV;
+        private TextView mFirstRateTV;
+        private TextView mSecondRateTV;
+        private Currency mCurrency;
+
+        CurrencyHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater.inflate(R.layout.list_item_currency, parent, false));
+            mCharCodeTV = itemView.findViewById(R.id.char_code_tv);
+            mScaleTV = itemView.findViewById(R.id.scale_tv);
+            mFirstRateTV = itemView.findViewById(R.id.currency1_tv);
+            mSecondRateTV = itemView.findViewById(R.id.currency2_tv);
+        }
+
+        void bind(Currency currency, BigDecimal rate) {
+            Log.e(MainActivity.DEBUG_TAG, currency.toString());
+            mCurrency = currency;
+            mCharCodeTV.setText(mCurrency.getCharCode());
+            mScaleTV.setText(String.format(getString(R.string.format_scale),
+                    currency.getScale(), currency.getName()));
+            mFirstRateTV.setText(String.format(Locale.getDefault(),"%.4f", currency.getRate()));
+            mSecondRateTV.setText(String.format(Locale.getDefault(),"%.4f",rate));
         }
     }
 }
