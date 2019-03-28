@@ -7,21 +7,22 @@ import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.Objects;
 
 @Root(strict = false)
 public class Currency {
-    @Attribute(name = "Id")
+    @Attribute(name = "Id", required = false)
     private int mId;
-    @Element(name = "NumCode")
+    @Element(name = "NumCode", required = false)
     private String mNumCode;
-    @Element(name = "CharCode")
+    @Element(name = "CharCode", required = false)
     private String mCharCode;
-    @Element(name = "Scale")
+    @Element(name = "Scale", required = false)
     private int mScale;
-    @Element(name = "Name")
+    @Element(name = "Name", required = false)
     private String mName;
-    @Element(name = "Rate")
+    @Element(name = "Rate", required = false)
     private BigDecimal mRate;
 
     public Currency() {

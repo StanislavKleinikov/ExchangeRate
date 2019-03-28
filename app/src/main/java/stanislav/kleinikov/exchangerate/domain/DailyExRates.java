@@ -13,10 +13,10 @@ import java.util.Objects;
 @Root(strict = false)
 public class DailyExRates {
 
-    @Attribute(name = "Date")
+    @Attribute(name = "Date", required = false)
     private String mDate;
 
-    @ElementList(inline = true, entry = "Currency")
+    @ElementList(inline = true, entry = "Currency", required = false)
     private List<Currency> mCurrencyList;
 
     private DailyExRates() {

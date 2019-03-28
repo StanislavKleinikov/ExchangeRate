@@ -1,10 +1,13 @@
 package stanislav.kleinikov.exchangerate.ui.main;
 
 import android.annotation.SuppressLint;
+import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -19,23 +22,28 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import stanislav.kleinikov.exchangerate.R;
 import stanislav.kleinikov.exchangerate.domain.Currency;
-import stanislav.kleinikov.exchangerate.domain.CurrencyBank;
-import stanislav.kleinikov.exchangerate.domain.DailyExRates;
 import stanislav.kleinikov.exchangerate.ui.settings.SettingActivity;
 
 
 public class MainFragment extends Fragment {
 
     private Context mContext;
+    private MainViewModel mViewModel;
+    private List<String> mDates;
+    private SharedPreferences mPreferences;
 
     public MainFragment() {
         // Required empty public constructor
@@ -49,12 +57,12 @@ public class MainFragment extends Fragment {
     public void onAttach(Context context) {
         super.onAttach(context);
         mContext = context;
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
     }
 
     @SuppressLint("CheckResult")
@@ -63,35 +71,27 @@ public class MainFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
-        MainViewModel viewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        mViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
         RecyclerView recyclerView = view.findViewById(R.id.main_recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
 
+        MutableLiveData<List<String>> datesData = mViewModel.getDates();
+        datesData.observe(this, strings -> {
+            if (strings != null) {
+                setHasOptionsMenu(true);
+                TextView firstDate = view.findViewById(R.id.first_date_tv);
+                TextView secondDate = view.findViewById(R.id.second_date_tv);
+                firstDate.setText(strings.get(0));
+                secondDate.setText(strings.get(1));
+            }
+            mDates = strings;
+            recyclerView.setAdapter(new CurrencyAdapter(mViewModel.getCurrencyList()));
+        });
+
+
         if (savedInstanceState == null) {
-            viewModel.updateExRateData().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
-                    .subscribeWith(new Observer<List<DailyExRates>>() {
-                        @Override
-                        public void onSubscribe(Disposable d) {
-
-                        }
-
-                        @Override
-                        public void onNext(List<DailyExRates> list) {
-                            Log.e(MainActivity.DEBUG_TAG, "ok");
-                            CurrencyBank.getInstance().setDailyExRatesList(list);
-                            recyclerView.setAdapter(new CurrencyAdapter(list));
-                        }
-
-                        @Override
-                        public void onError(Throwable e) {
-                            Log.e(MainActivity.DEBUG_TAG, "error");
-                        }
-
-                        @Override
-                        public void onComplete() {
-
-                        }
-                    });
+            mViewModel.updateExRateData(new Date()).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                    .subscribeWith(new CurrencyObserver());
         }
         return view;
     }
@@ -117,12 +117,10 @@ public class MainFragment extends Fragment {
 
     private class CurrencyAdapter extends RecyclerView.Adapter<CurrencyHolder> {
 
-        private DailyExRates mFirstDailyExRate;
-        private DailyExRates mSecondDailyExRate;
+        private List<Currency> mCurrencyList;
 
-        private CurrencyAdapter(List<DailyExRates> list) {
-            mFirstDailyExRate = list.get(0);
-            mSecondDailyExRate = list.get(1);
+        private CurrencyAdapter(List<Currency> list) {
+            mCurrencyList = list;
         }
 
 
@@ -133,17 +131,15 @@ public class MainFragment extends Fragment {
             return new CurrencyHolder(layoutInflater, viewGroup);
         }
 
-        @SuppressLint("ClickableViewAccessibility")
         @Override
         public void onBindViewHolder(@NonNull CurrencyHolder currencyHolder, int i) {
-            Currency currency = mFirstDailyExRate.getCurrencyList().get(i);
-            BigDecimal rate = mSecondDailyExRate.getCurrencyList().get(i).getRate();
-            currencyHolder.bind(currency, rate);
+            Currency currency = mCurrencyList.get(i);
+            currencyHolder.bind(currency);
         }
 
         @Override
         public int getItemCount() {
-            return mFirstDailyExRate.getCurrencyList().size();
+            return mCurrencyList.size();
         }
     }
 
@@ -162,13 +158,51 @@ public class MainFragment extends Fragment {
             mSecondRateTV = itemView.findViewById(R.id.currency2_tv);
         }
 
-        void bind(Currency currency, BigDecimal rate) {
+        void bind(Currency currency) {
             mCurrency = currency;
+            if (!mPreferences.getBoolean(mCurrency.getCharCode(), false)) {
+                itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
+            }
             mCharCodeTV.setText(mCurrency.getCharCode());
             mScaleTV.setText(String.format(getString(R.string.format_scale),
                     currency.getScale(), currency.getName()));
-            mFirstRateTV.setText(String.format(Locale.getDefault(), "%.4f", currency.getRate()));
-            mSecondRateTV.setText(String.format(Locale.getDefault(), "%.4f", rate));
+            Map<String, BigDecimal> currencyRates = mViewModel.getCurrencyRates(currency.getId());
+            BigDecimal rate1 = currencyRates.get(mDates.get(0));
+            BigDecimal rate2 = currencyRates.get(mDates.get(1));
+            mFirstRateTV.setText(String.format(Locale.getDefault(), "%.4f", rate1));
+            mSecondRateTV.setText(String.format(Locale.getDefault(), "%.4f", rate2));
+        }
+    }
+
+    private class CurrencyObserver implements Observer<List<String>> {
+
+        @Override
+        public void onSubscribe(Disposable d) {
+
+        }
+
+        @Override
+        public void onNext(List<String> list) {
+            Log.e(MainActivity.DEBUG_TAG, list.toString());
+            if (list.size() > 0 && list.size() < 2) {
+                Date date = new Date();
+                date.setTime(date.getTime() - TimeUnit.DAYS.toMillis(1));
+                mViewModel.updateExRateData(date).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                        .subscribeWith(new CurrencyObserver());
+            } else {
+                mViewModel.getDates().setValue(list);
+            }
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            e.printStackTrace();
+            Log.e(MainActivity.DEBUG_TAG, "error");
+        }
+
+        @Override
+        public void onComplete() {
+
         }
     }
 }

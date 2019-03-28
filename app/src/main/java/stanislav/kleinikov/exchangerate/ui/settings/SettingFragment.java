@@ -63,10 +63,10 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
-        RecyclerView recyclerView = view.findViewById(R.id.setting_recycler_view);
+        RecyclerView recyclerView = view.findViewById(R.id.settings_recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
         mAdapter = new CurrencyAdapter(CurrencyBank.getInstance()
-                .getDailyExRatesList().get(0).getCurrencyList(), this);
+                .getCurrencyList(), this);
         recyclerView.setAdapter(mAdapter);
         CurrencyItemTouchCallback rateItemTouchCallback = new CurrencyItemTouchCallback(mAdapter);
         mHelper = new ItemTouchHelper(rateItemTouchCallback);
@@ -165,7 +165,7 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
         void bind(Currency currency) {
             mCurrency = currency;
             visibilitySW.setChecked(mPreferences.getBoolean(mCurrency.getCharCode(), false));
-            mCharCodeTV.setText(mCurrency.getName());
+            mCharCodeTV.setText(mCurrency.getCharCode());
             mScaleTV.setText(String.format(getString(R.string.format_scale),
                     currency.getScale(), currency.getName()));
 
