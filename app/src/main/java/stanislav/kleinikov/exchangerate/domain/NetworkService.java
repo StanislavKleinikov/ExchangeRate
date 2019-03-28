@@ -23,7 +23,7 @@ public class NetworkService {
                 .build();
     }
 
-    private static class NetworkServiceHolder {
+    private static final class NetworkServiceHolder {
         private static final NetworkService INSTANCE = new NetworkService();
     }
 

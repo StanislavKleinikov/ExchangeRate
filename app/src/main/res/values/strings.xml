@@ -10,5 +10,6 @@
 
     <string name="settings">Настройки</string>
     <string name="save">Сохранить</string>
+    <string name="toast_saved">Настройки сохранены</string>
 
 </resources>

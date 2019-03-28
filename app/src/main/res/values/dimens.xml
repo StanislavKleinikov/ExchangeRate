@@ -2,5 +2,5 @@
 <resources>
     <dimen name="basic_margin">8dp</dimen>
     <dimen name="basic_padding">8dp</dimen>
-    <dimen name="basic_text">20sp</dimen>
+    <dimen name="basic_text">15sp</dimen>
 </resources>
