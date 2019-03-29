@@ -1,6 +1,7 @@
 package stanislav.kleinikov.exchangerate.ui.main;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
@@ -10,6 +11,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -28,7 +30,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -38,8 +39,12 @@ import stanislav.kleinikov.exchangerate.domain.Currency;
 import stanislav.kleinikov.exchangerate.ui.settings.SettingActivity;
 
 
-public class MainFragment extends Fragment {
+public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
 
+    private static final int REQUEST_CODE_SETTINGS = 1;
+
+    private RecyclerView mRecyclerView;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
     private Context mContext;
     private MainViewModel mViewModel;
     private List<String> mDates;
@@ -72,8 +77,15 @@ public class MainFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
         mViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
-        RecyclerView recyclerView = view.findViewById(R.id.main_recycler_view);
-        recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
+        mRecyclerView = view.findViewById(R.id.main_recycler_view);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(mContext));
+
+        mSwipeRefreshLayout = view.findViewById(R.id.swipe_container);
+        mSwipeRefreshLayout.setOnRefreshListener(this);
+        mSwipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary,
+                R.color.colorPrimaryDark,
+                R.color.colorPrimaryLight);
+
 
         MutableLiveData<List<String>> datesData = mViewModel.getDates();
         datesData.observe(this, strings -> {
@@ -85,14 +97,18 @@ public class MainFragment extends Fragment {
                 secondDate.setText(strings.get(1));
             }
             mDates = strings;
-            recyclerView.setAdapter(new CurrencyAdapter(mViewModel.getCurrencyList()));
+            mRecyclerView.setAdapter(new CurrencyAdapter(mViewModel.getCurrencyList()));
         });
 
+        mSwipeRefreshLayout.post(() -> {
+            mSwipeRefreshLayout.setRefreshing(true);
 
-        if (savedInstanceState == null) {
-            mViewModel.updateExRateData(new Date()).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+            // Fetching data from server
+            mViewModel.updateExRateData(mContext, new Date()).subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
                     .subscribeWith(new CurrencyObserver());
-        }
+        });
+
         return view;
     }
 
@@ -108,11 +124,20 @@ public class MainFragment extends Fragment {
         switch (itemId) {
             case R.id.settings:
                 Intent intent = new Intent(mContext, SettingActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, REQUEST_CODE_SETTINGS);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @SuppressLint("CheckResult")
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Override
+    public void onRefresh() {
+        mViewModel.updateExRateData(mContext, new Date()).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeWith(new CurrencyObserver());
     }
 
     private class CurrencyAdapter extends RecyclerView.Adapter<CurrencyHolder> {
@@ -174,6 +199,16 @@ public class MainFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (REQUEST_CODE_SETTINGS == requestCode) {
+            if (resultCode == Activity.RESULT_OK) {
+                mRecyclerView.setAdapter(new CurrencyAdapter(mViewModel.getCurrencyList()));
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
     private class CurrencyObserver implements Observer<List<String>> {
 
         @Override
@@ -181,16 +216,19 @@ public class MainFragment extends Fragment {
 
         }
 
+        @SuppressWarnings("ResultOfMethodCallIgnored")
+        @SuppressLint("CheckResult")
         @Override
         public void onNext(List<String> list) {
             Log.e(MainActivity.DEBUG_TAG, list.toString());
             if (list.size() > 0 && list.size() < 2) {
                 Date date = new Date();
                 date.setTime(date.getTime() - TimeUnit.DAYS.toMillis(1));
-                mViewModel.updateExRateData(date).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                mViewModel.updateExRateData(mContext, date).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
                         .subscribeWith(new CurrencyObserver());
             } else {
                 mViewModel.getDates().setValue(list);
+                mSwipeRefreshLayout.setRefreshing(false);
             }
         }
 

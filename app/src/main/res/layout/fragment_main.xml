@@ -3,8 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.main.MainFragment"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:context=".ui.main.MainFragment">
 
     <LinearLayout
         android:id="@+id/title_container"
@@ -21,9 +21,9 @@
         <TextView
             android:id="@+id/first_date_tv"
             android:layout_width="0dp"
-            android:gravity="center"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:gravity="center"
             tools:text="1.2333" />
 
         <TextView
@@ -35,9 +35,15 @@
             tools:text="1.2334" />
     </LinearLayout>
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/main_recycler_view"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/main_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </android.support.v4.widget.SwipeRefreshLayout>
 
 </LinearLayout>

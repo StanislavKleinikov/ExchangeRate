@@ -7,6 +7,7 @@ import stanislav.kleinikov.exchangerate.R;
 
 public class App extends Application {
 
+
     @Override
     public void onCreate() {
         super.onCreate();

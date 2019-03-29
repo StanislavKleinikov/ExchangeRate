@@ -2,6 +2,7 @@ package stanislav.kleinikov.exchangerate.domain;
 
 
 import android.util.SparseArray;
+import android.util.SparseBooleanArray;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -11,7 +12,6 @@ import java.util.Map;
 public class CurrencyBank {
 
     private List<Currency> mCurrencyList = new ArrayList<>();
-
     private SparseArray<Map<String, BigDecimal>> mRates;
 
     private CurrencyBank() {
@@ -42,4 +42,5 @@ public class CurrencyBank {
     public Map<String, BigDecimal> getRatesById(int currencyId) {
         return mRates.get(currencyId);
     }
+
 }

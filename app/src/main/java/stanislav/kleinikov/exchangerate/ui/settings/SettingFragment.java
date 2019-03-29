@@ -1,6 +1,7 @@
 package stanislav.kleinikov.exchangerate.ui.settings;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -11,7 +12,10 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -19,8 +23,8 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,13 +34,17 @@ import java.util.List;
 import stanislav.kleinikov.exchangerate.R;
 import stanislav.kleinikov.exchangerate.domain.Currency;
 import stanislav.kleinikov.exchangerate.domain.CurrencyBank;
+import stanislav.kleinikov.exchangerate.ui.main.MainActivity;
 
-public class SettingFragment extends Fragment implements OnStartDragListener {
+public class SettingFragment extends Fragment implements OnStartDragListener, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private Context mContext;
     private ItemTouchHelper mHelper;
     private SharedPreferences mPreferences;
     private CurrencyAdapter mAdapter;
+    private SparseBooleanArray mVisibilityList;
+    private List<Currency> mCurrencyList;
+
 
     public static SettingFragment newInstance() {
         return new SettingFragment();
@@ -56,7 +64,15 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        setRetainInstance(true);
         mPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+        mPreferences.registerOnSharedPreferenceChangeListener(this);
+        mCurrencyList = CurrencyBank.getInstance().getCurrencyList();
+        mVisibilityList = new SparseBooleanArray(mCurrencyList.size());
+        for (Currency currency : mCurrencyList) {
+            mVisibilityList.put(currency.getId(), mPreferences.getBoolean(currency.getCharCode(), false));
+        }
+        mAdapter = new CurrencyAdapter(this);
     }
 
     @Override
@@ -65,8 +81,7 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
         RecyclerView recyclerView = view.findViewById(R.id.settings_recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
-        mAdapter = new CurrencyAdapter(CurrencyBank.getInstance()
-                .getCurrencyList(), this);
+
         recyclerView.setAdapter(mAdapter);
         CurrencyItemTouchCallback rateItemTouchCallback = new CurrencyItemTouchCallback(mAdapter);
         mHelper = new ItemTouchHelper(rateItemTouchCallback);
@@ -84,7 +99,13 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
         int itemId = item.getItemId();
         switch (itemId) {
             case R.id.save:
+                SharedPreferences.Editor editor = mPreferences.edit();
+                for (Currency currency : mCurrencyList) {
+                    editor.putBoolean(currency.getCharCode(), mVisibilityList.get(currency.getId()));
+                }
+                editor.apply();
                 Toast.makeText(mContext, getString(R.string.toast_saved), Toast.LENGTH_SHORT).show();
+                ((SettingActivity) mContext).setResult(Activity.RESULT_OK);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -96,13 +117,16 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
         mHelper.startDrag(viewHolder);
     }
 
-    private class CurrencyAdapter extends RecyclerView.Adapter<CurrencyHolder> {
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Log.e(MainActivity.DEBUG_TAG, "Preference changed");
+    }
 
-        private List<Currency> mCurrencyList;
+    private class CurrencyAdapter extends RecyclerView.Adapter<CurrencyHolder> {
         private final OnStartDragListener mDragStartListener;
 
-        private CurrencyAdapter(List<Currency> CurrencyList, OnStartDragListener dragStartListener) {
-            mCurrencyList = CurrencyList;
+        private CurrencyAdapter(OnStartDragListener dragStartListener) {
+
             mDragStartListener = dragStartListener;
         }
 
@@ -147,11 +171,11 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
         }
     }
 
-    private class CurrencyHolder extends RecyclerView.ViewHolder {
+    private class CurrencyHolder extends RecyclerView.ViewHolder implements CompoundButton.OnCheckedChangeListener {
         private TextView mCharCodeTV;
         private TextView mScaleTV;
         private ImageView imageView;
-        private Switch visibilitySW;
+        private SwitchCompat visibilitySW;
         private Currency mCurrency;
 
         CurrencyHolder(LayoutInflater inflater, ViewGroup parent) {
@@ -160,15 +184,21 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
             mScaleTV = itemView.findViewById(R.id.scale_tv);
             imageView = itemView.findViewById(R.id.anchor_iv);
             visibilitySW = itemView.findViewById(R.id.visibility_sw);
+            visibilitySW.setOnCheckedChangeListener(this);
         }
 
         void bind(Currency currency) {
             mCurrency = currency;
-            visibilitySW.setChecked(mPreferences.getBoolean(mCurrency.getCharCode(), false));
+            visibilitySW.setChecked(mVisibilityList.get(mCurrency.getId()));
             mCharCodeTV.setText(mCurrency.getCharCode());
             mScaleTV.setText(String.format(getString(R.string.format_scale),
                     currency.getScale(), currency.getName()));
 
+        }
+
+        @Override
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            mVisibilityList.put(mCurrency.getId(), isChecked);
         }
     }
 

@@ -3,8 +3,12 @@ package stanislav.kleinikov.exchangerate.ui.main;
 import android.annotation.SuppressLint;
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.util.SparseArray;
+import android.util.SparseBooleanArray;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -17,9 +21,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import stanislav.kleinikov.exchangerate.domain.Currency;
 import stanislav.kleinikov.exchangerate.domain.CurrencyBank;
@@ -50,7 +51,7 @@ public class MainViewModel extends ViewModel {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @SuppressLint("CheckResult")
-    Observable<List<String>> updateExRateData(Date date) {
+    Observable<List<String>> updateExRateData(Context context, Date date) {
 
         SimpleDateFormat dateFormat = new SimpleDateFormat(NbrbApi.PATTERN_DATE, Locale.getDefault());
 
@@ -72,9 +73,16 @@ public class MainViewModel extends ViewModel {
                     String todayDate = dailyExRates.getDate();
                     String anotherDate = dailyExRates2.getDate();
 
+                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+                    SharedPreferences.Editor edit = preferences.edit();
+
                     SparseArray<Map<String, BigDecimal>> rates = new SparseArray<>();
+
                     for (int i = 0; i < todayList.size(); i++) {
                         Currency todayCurrency = todayList.get(i);
+                        if (!preferences.contains(todayCurrency.getCharCode())) {
+                            edit.putBoolean(todayCurrency.getCharCode(), false);
+                        }
 
                         BigDecimal todayRate = todayCurrency.getRate();
 
@@ -91,9 +99,11 @@ public class MainViewModel extends ViewModel {
                         rates.put(todayList.get(i).getId(), map);
                     }
 
+                    edit.apply();
+
                     Log.e(MainActivity.DEBUG_TAG, todayList.toString());
                     Log.e(MainActivity.DEBUG_TAG, anotherDayList.toString());
-                    mBank.setCurrencyList(dailyExRates.getCurrencyList());
+                    mBank.setCurrencyList(todayList);
                     mBank.setRates(rates);
                     list.add(todayDate);
                     if (anotherDate != null) {
