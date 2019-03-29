@@ -14,7 +14,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.util.Log;
+
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -28,15 +28,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import stanislav.kleinikov.exchangerate.R;
+import stanislav.kleinikov.exchangerate.application.App;
 import stanislav.kleinikov.exchangerate.domain.Currency;
 import stanislav.kleinikov.exchangerate.domain.CurrencyBank;
-import stanislav.kleinikov.exchangerate.ui.main.MainActivity;
 
-public class SettingFragment extends Fragment implements OnStartDragListener, SharedPreferences.OnSharedPreferenceChangeListener {
+public class SettingFragment extends Fragment implements OnStartDragListener {
 
     private Context mContext;
     private ItemTouchHelper mHelper;
@@ -66,8 +67,7 @@ public class SettingFragment extends Fragment implements OnStartDragListener, Sh
         setHasOptionsMenu(true);
         setRetainInstance(true);
         mPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
-        mPreferences.registerOnSharedPreferenceChangeListener(this);
-        mCurrencyList = CurrencyBank.getInstance().getCurrencyList();
+        mCurrencyList = new ArrayList<>(CurrencyBank.getInstance().getCurrencyList());
         mVisibilityList = new SparseBooleanArray(mCurrencyList.size());
         for (Currency currency : mCurrencyList) {
             mVisibilityList.put(currency.getId(), mPreferences.getBoolean(currency.getCharCode(), false));
@@ -99,11 +99,18 @@ public class SettingFragment extends Fragment implements OnStartDragListener, Sh
         int itemId = item.getItemId();
         switch (itemId) {
             case R.id.save:
-                SharedPreferences.Editor editor = mPreferences.edit();
-                for (Currency currency : mCurrencyList) {
-                    editor.putBoolean(currency.getCharCode(), mVisibilityList.get(currency.getId()));
+                SharedPreferences.Editor visibilityEditor = mPreferences.edit();
+                SharedPreferences orderPreferences = mContext.getSharedPreferences(App.PREFERENCES_CURRENCY_ORDER, Context.MODE_PRIVATE);
+                SharedPreferences.Editor orderEditor = orderPreferences.edit();
+                for (int i = 0; i < mCurrencyList.size(); i++) {
+                    Currency currency = mCurrencyList.get(i);
+                    visibilityEditor.putBoolean(currency.getCharCode(), mVisibilityList.get(currency.getId()));
+                    orderEditor.putInt(currency.getCharCode(), i);
                 }
-                editor.apply();
+
+                visibilityEditor.apply();
+                orderEditor.apply();
+                CurrencyBank.getInstance().setCurrencyList(mCurrencyList);
                 Toast.makeText(mContext, getString(R.string.toast_saved), Toast.LENGTH_SHORT).show();
                 ((SettingActivity) mContext).setResult(Activity.RESULT_OK);
                 return true;
@@ -117,16 +124,10 @@ public class SettingFragment extends Fragment implements OnStartDragListener, Sh
         mHelper.startDrag(viewHolder);
     }
 
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Log.e(MainActivity.DEBUG_TAG, "Preference changed");
-    }
-
     private class CurrencyAdapter extends RecyclerView.Adapter<CurrencyHolder> {
         private final OnStartDragListener mDragStartListener;
 
         private CurrencyAdapter(OnStartDragListener dragStartListener) {
-
             mDragStartListener = dragStartListener;
         }
 
@@ -167,7 +168,6 @@ public class SettingFragment extends Fragment implements OnStartDragListener, Sh
                     Collections.swap(mCurrencyList, i, i - 1);
                 }
             }
-            mPreferences.edit().putInt(mCurrencyList.get(toPosition).getCharCode(), toPosition).apply();
             notifyItemMoved(fromPosition, toPosition);
         }
     }

@@ -110,10 +110,8 @@ public class MainViewModel extends ViewModel {
                     SharedPreferences orderPreferences = context.getSharedPreferences(App.PREFERENCES_CURRENCY_ORDER,
                             Context.MODE_PRIVATE);
 
-
-                    Collections.sort(todayList, (o1, o2) -> orderPreferences.getInt(o2.getCharCode(), 0) -
-                            orderPreferences.getInt(o1.getCharCode(), 0));
-
+                    Collections.sort(todayList, (o1, o2) -> orderPreferences.getInt(o1.getCharCode(), 0) -
+                            orderPreferences.getInt(o2.getCharCode(), 0));
 
                     mBank.setCurrencyList(todayList);
                     mBank.setRates(rates);

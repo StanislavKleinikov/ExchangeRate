@@ -14,7 +14,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -223,15 +222,16 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         @SuppressLint("CheckResult")
         @Override
         public void onNext(List<String> list) {
-            Log.e(MainActivity.DEBUG_TAG, list.toString());
-            if (list.size() > 0 && list.size() < 2) {
+            if (list.size() == 1) {
                 Date date = new Date();
                 date.setTime(date.getTime() - TimeUnit.DAYS.toMillis(1));
                 mViewModel.updateExRateData(mContext, date).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
                         .subscribeWith(new CurrencyObserver());
-            } else {
+            } else if (list.size() == 2) {
                 mViewModel.getDates().setValue(list);
                 mSwipeRefreshLayout.setRefreshing(false);
+            } else {
+                onError(new Exception("Invalid data"));
             }
         }
 
