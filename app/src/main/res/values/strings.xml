@@ -11,5 +11,6 @@
     <string name="settings">Настройки</string>
     <string name="save">Сохранить</string>
     <string name="toast_saved">Настройки сохранены</string>
+    <string name="load_failed">Не удалось загрузить данные</string>
 
 </resources>

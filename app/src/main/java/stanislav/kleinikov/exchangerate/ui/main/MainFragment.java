@@ -22,6 +22,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -234,8 +235,8 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
         @Override
         public void onError(Throwable e) {
-            e.printStackTrace();
-            Log.e(MainActivity.DEBUG_TAG, "error");
+            Toast.makeText(getContext(), getText(R.string.load_failed), Toast.LENGTH_SHORT).show();
+            mSwipeRefreshLayout.setRefreshing(false);
         }
 
         @Override
