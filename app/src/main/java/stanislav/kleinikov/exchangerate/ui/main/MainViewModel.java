@@ -6,9 +6,7 @@ import android.arch.lifecycle.ViewModel;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.util.SparseArray;
-import android.util.SparseBooleanArray;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -45,6 +43,7 @@ public class MainViewModel extends ViewModel {
         return mBank.getCurrencyList();
     }
 
+
     MutableLiveData<List<String>> getDates() {
         return mDates;
     }
@@ -77,7 +76,6 @@ public class MainViewModel extends ViewModel {
                     SharedPreferences.Editor edit = preferences.edit();
 
                     SparseArray<Map<String, BigDecimal>> rates = new SparseArray<>();
-
                     for (int i = 0; i < todayList.size(); i++) {
                         Currency todayCurrency = todayList.get(i);
                         if (!preferences.contains(todayCurrency.getCharCode())) {
@@ -101,8 +99,6 @@ public class MainViewModel extends ViewModel {
 
                     edit.apply();
 
-                    Log.e(MainActivity.DEBUG_TAG, todayList.toString());
-                    Log.e(MainActivity.DEBUG_TAG, anotherDayList.toString());
                     mBank.setCurrencyList(todayList);
                     mBank.setRates(rates);
                     list.add(todayDate);

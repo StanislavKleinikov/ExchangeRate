@@ -25,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -101,15 +102,16 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
             mRecyclerView.setAdapter(new CurrencyAdapter(mViewModel.getCurrencyList()));
         });
 
-        mSwipeRefreshLayout.post(() -> {
-            mSwipeRefreshLayout.setRefreshing(true);
+        if (savedInstanceState == null) {
+            mSwipeRefreshLayout.post(() -> {
+                mSwipeRefreshLayout.setRefreshing(true);
 
-            // Fetching data from server
-            mViewModel.updateExRateData(mContext, new Date()).subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribeWith(new CurrencyObserver());
-        });
-
+                // Fetching data from server
+                mViewModel.updateExRateData(mContext, new Date()).subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribeWith(new CurrencyObserver());
+            });
+        }
         return view;
     }
 
@@ -143,12 +145,15 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
     private class CurrencyAdapter extends RecyclerView.Adapter<CurrencyHolder> {
 
-        private List<Currency> mCurrencyList;
+        private List<Currency> mCurrencyList = new ArrayList<>();
 
         private CurrencyAdapter(List<Currency> list) {
-            mCurrencyList = list;
+            for (Currency currency : list) {
+                if (mPreferences.getBoolean(currency.getCharCode(), false)) {
+                    mCurrencyList.add(currency);
+                }
+            }
         }
-
 
         @NonNull
         @Override
@@ -186,9 +191,6 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
         void bind(Currency currency) {
             mCurrency = currency;
-            if (!mPreferences.getBoolean(mCurrency.getCharCode(), false)) {
-                itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
-            }
             mCharCodeTV.setText(mCurrency.getCharCode());
             mScaleTV.setText(String.format(getString(R.string.format_scale),
                     currency.getScale(), currency.getName()));

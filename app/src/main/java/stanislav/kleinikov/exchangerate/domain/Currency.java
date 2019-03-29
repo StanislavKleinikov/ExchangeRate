@@ -7,7 +7,6 @@ import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 
 import java.math.BigDecimal;
-import java.util.Map;
 import java.util.Objects;
 
 @Root(strict = false)

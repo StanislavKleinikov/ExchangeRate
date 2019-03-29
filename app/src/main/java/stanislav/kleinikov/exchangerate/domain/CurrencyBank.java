@@ -2,7 +2,6 @@ package stanislav.kleinikov.exchangerate.domain;
 
 
 import android.util.SparseArray;
-import android.util.SparseBooleanArray;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -34,6 +33,7 @@ public class CurrencyBank {
     public void setCurrencyList(List<Currency> currencyList) {
         mCurrencyList = currencyList;
     }
+
 
     public void setRates(SparseArray<Map<String, BigDecimal>> rates) {
         mRates = rates;
