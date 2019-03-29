@@ -167,6 +167,7 @@ public class SettingFragment extends Fragment implements OnStartDragListener, Sh
                     Collections.swap(mCurrencyList, i, i - 1);
                 }
             }
+            mPreferences.edit().putInt(mCurrencyList.get(toPosition).getCharCode(), toPosition).apply();
             notifyItemMoved(fromPosition, toPosition);
         }
     }

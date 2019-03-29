@@ -11,6 +11,7 @@ import android.util.SparseArray;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -20,10 +21,13 @@ import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
 import io.reactivex.schedulers.Schedulers;
+import stanislav.kleinikov.exchangerate.application.App;
 import stanislav.kleinikov.exchangerate.domain.Currency;
 import stanislav.kleinikov.exchangerate.domain.CurrencyBank;
 import stanislav.kleinikov.exchangerate.domain.NbrbApi;
 import stanislav.kleinikov.exchangerate.domain.NetworkService;
+
+import static stanislav.kleinikov.exchangerate.domain.NbrbApi.PATTERN_FORMAT_STRING;
 
 public class MainViewModel extends ViewModel {
 
@@ -52,7 +56,7 @@ public class MainViewModel extends ViewModel {
     @SuppressLint("CheckResult")
     Observable<List<String>> updateExRateData(Context context, Date date) {
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat(NbrbApi.PATTERN_DATE, Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat(NbrbApi.PATTERN_FORMAT_DATE, Locale.getDefault());
 
         return Observable.zip(NetworkService.getInstance()
                         .getNbrbApi()
@@ -64,15 +68,19 @@ public class MainViewModel extends ViewModel {
                         .subscribeOn(Schedulers.io())
                 , (dailyExRates, dailyExRates2) -> {
 
-
                     List<String> list = new ArrayList<>();
                     List<Currency> todayList = dailyExRates.getCurrencyList();
                     List<Currency> anotherDayList = dailyExRates2.getCurrencyList();
 
-                    String todayDate = dailyExRates.getDate();
-                    String anotherDate = dailyExRates2.getDate();
+                    String[] s1 = dailyExRates.getDate().split("/");
+
+                    String[] s2 = dailyExRates2.getDate().split("/");
+
+                    String todayDate = String.format(PATTERN_FORMAT_STRING, s1[1], s1[0], s1[2]);
+                    String anotherDate = String.format(PATTERN_FORMAT_STRING, s2[1], s2[0], s2[2]);
 
                     SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+
                     SharedPreferences.Editor edit = preferences.edit();
 
                     SparseArray<Map<String, BigDecimal>> rates = new SparseArray<>();
@@ -99,12 +107,18 @@ public class MainViewModel extends ViewModel {
 
                     edit.apply();
 
+                    SharedPreferences orderPreferences = context.getSharedPreferences(App.PREFERENCES_CURRENCY_ORDER,
+                            Context.MODE_PRIVATE);
+
+
+                    Collections.sort(todayList, (o1, o2) -> orderPreferences.getInt(o2.getCharCode(), 0) -
+                            orderPreferences.getInt(o1.getCharCode(), 0));
+
+
                     mBank.setCurrencyList(todayList);
                     mBank.setRates(rates);
                     list.add(todayDate);
-                    if (anotherDate != null) {
-                        list.add(anotherDate);
-                    }
+                    list.add(anotherDate);
                     return list;
                 });
     }
