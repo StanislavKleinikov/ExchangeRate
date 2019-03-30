@@ -14,6 +14,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -102,6 +103,7 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         });
 
         if (savedInstanceState == null) {
+            mRecyclerView.setAdapter(new CurrencyAdapter(mViewModel.getCurrencyList()));
             mSwipeRefreshLayout.post(() -> {
                 mSwipeRefreshLayout.setRefreshing(true);
 
@@ -222,17 +224,8 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         @SuppressLint("CheckResult")
         @Override
         public void onNext(List<String> list) {
-            if (list.size() == 1) {
-                Date date = new Date();
-                date.setTime(date.getTime() - TimeUnit.DAYS.toMillis(1));
-                mViewModel.updateExRateData(mContext, date).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
-                        .subscribeWith(new CurrencyObserver());
-            } else if (list.size() == 2) {
-                mViewModel.getDates().setValue(list);
-                mSwipeRefreshLayout.setRefreshing(false);
-            } else {
-                onError(new Exception("Invalid data"));
-            }
+            mViewModel.getDates().setValue(list);
+            mSwipeRefreshLayout.setRefreshing(false);
         }
 
         @Override

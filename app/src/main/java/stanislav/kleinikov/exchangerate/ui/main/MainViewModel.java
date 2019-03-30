@@ -11,6 +11,7 @@ import android.util.SparseArray;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -65,6 +66,9 @@ public class MainViewModel extends ViewModel {
                 NetworkService.getInstance()
                         .getNbrbApi()
                         .loadDailyRates(dateFormat.format(new Date(date.getTime() + TimeUnit.DAYS.toMillis(1))))
+                        .onErrorResumeNext( NetworkService.getInstance()
+                                .getNbrbApi()
+                                .loadDailyRates(dateFormat.format(new Date(date.getTime() - TimeUnit.DAYS.toMillis(1)))))
                         .subscribeOn(Schedulers.io())
                 , (dailyExRates, dailyExRates2) -> {
 
@@ -117,6 +121,7 @@ public class MainViewModel extends ViewModel {
                     mBank.setRates(rates);
                     list.add(todayDate);
                     list.add(anotherDate);
+                    Collections.sort(list);
                     return list;
                 });
     }
