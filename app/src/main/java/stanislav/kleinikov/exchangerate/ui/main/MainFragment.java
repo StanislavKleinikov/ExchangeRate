@@ -103,7 +103,7 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         });
 
         if (savedInstanceState == null) {
-            mRecyclerView.setAdapter(new CurrencyAdapter(mViewModel.getCurrencyList()));
+            mRecyclerView.setAdapter(new CurrencyAdapter(new ArrayList<>()));
             mSwipeRefreshLayout.post(() -> {
                 mSwipeRefreshLayout.setRefreshing(true);
 
@@ -196,10 +196,12 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
             mScaleTV.setText(String.format(getString(R.string.format_scale),
                     currency.getScale(), currency.getName()));
             Map<String, BigDecimal> currencyRates = mViewModel.getCurrencyRates(currency.getId());
+
             BigDecimal rate1 = currencyRates.get(mDates.get(0));
             BigDecimal rate2 = currencyRates.get(mDates.get(1));
             mFirstRateTV.setText(String.format(Locale.getDefault(), "%.4f", rate1));
             mSecondRateTV.setText(String.format(Locale.getDefault(), "%.4f", rate2));
+
         }
     }
 
@@ -217,7 +219,6 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
         @Override
         public void onSubscribe(Disposable d) {
-
         }
 
         @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -236,7 +237,6 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
         @Override
         public void onComplete() {
-
         }
     }
 }
