@@ -6,13 +6,19 @@ import android.arch.lifecycle.ViewModel;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.util.SparseArray;
 
 import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -66,7 +72,7 @@ public class MainViewModel extends ViewModel {
                 NetworkService.getInstance()
                         .getNbrbApi()
                         .loadDailyRates(dateFormat.format(new Date(date.getTime() + TimeUnit.DAYS.toMillis(1))))
-                        .onErrorResumeNext( NetworkService.getInstance()
+                        .onErrorResumeNext(NetworkService.getInstance()
                                 .getNbrbApi()
                                 .loadDailyRates(dateFormat.format(new Date(date.getTime() - TimeUnit.DAYS.toMillis(1)))))
                         .subscribeOn(Schedulers.io())
@@ -121,7 +127,14 @@ public class MainViewModel extends ViewModel {
                     mBank.setRates(rates);
                     list.add(todayDate);
                     list.add(anotherDate);
-                    Collections.sort(list);
+                    Collections.sort(list, (o1, o2) -> {
+                        dateFormat.applyPattern("dd.MM.yyyy");
+                        try {
+                            return dateFormat.parse(o1).compareTo(dateFormat.parse(o2));
+                        } catch (ParseException e) {
+                            throw new IllegalArgumentException(e);
+                        }
+                    });
                     return list;
                 });
     }
