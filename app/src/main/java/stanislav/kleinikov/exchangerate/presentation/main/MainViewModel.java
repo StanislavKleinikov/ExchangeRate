@@ -1,8 +1,5 @@
-package stanislav.kleinikov.exchangerate.ui.main;
+package stanislav.kleinikov.exchangerate.presentation.main;
 
-import android.annotation.SuppressLint;
-import android.arch.lifecycle.MutableLiveData;
-import android.arch.lifecycle.ViewModel;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -18,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
@@ -25,15 +23,17 @@ import io.reactivex.schedulers.Schedulers;
 import stanislav.kleinikov.exchangerate.application.App;
 import stanislav.kleinikov.exchangerate.domain.Currency;
 import stanislav.kleinikov.exchangerate.domain.CurrencyBank;
-import stanislav.kleinikov.exchangerate.domain.NbrbApi;
-import stanislav.kleinikov.exchangerate.domain.NetworkService;
+import stanislav.kleinikov.exchangerate.data.NetworkService;
+import stanislav.kleinikov.exchangerate.domain.DailyExRates;
 
-import static stanislav.kleinikov.exchangerate.domain.NbrbApi.PATTERN_FORMAT_STRING;
+
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
 
 public class MainViewModel extends ViewModel {
 
-    private CurrencyBank mBank;
-    private MutableLiveData<List<String>> mDates;
+    private final CurrencyBank mBank;
+    private final MutableLiveData<List<String>> mDates;
 
     public MainViewModel() {
         mBank = CurrencyBank.getInstance();
@@ -53,22 +53,30 @@ public class MainViewModel extends ViewModel {
         return mDates;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    @SuppressLint("CheckResult")
     Observable<List<String>> updateExRateData(Context context, Date date) {
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat(NbrbApi.PATTERN_FORMAT_DATE, Locale.getDefault());
+        SimpleDateFormat apiDateFormatter = new SimpleDateFormat("yyyy-M-d", Locale.getDefault());
 
-        return Observable.zip(NetworkService.getInstance()
+        Date nextDate = new Date(date.getTime() + TimeUnit.DAYS.toMillis(1));
+        Date lastDate = new Date(date.getTime() - TimeUnit.DAYS.toMillis(1));
+
+        return Observable.zip(
+                NetworkService.getInstance()
                         .getNbrbApi()
-                        .loadDailyRates(dateFormat.format(date))
+                        .loadDailyRates(apiDateFormatter.format(date), 0)
+                        .map(rates -> new DailyExRates(date, rates))
                         .subscribeOn(Schedulers.io()),
                 NetworkService.getInstance()
                         .getNbrbApi()
-                        .loadDailyRates(dateFormat.format(new Date(date.getTime() + TimeUnit.DAYS.toMillis(1))))
-                        .onErrorResumeNext(NetworkService.getInstance()
-                                .getNbrbApi()
-                                .loadDailyRates(dateFormat.format(new Date(date.getTime() - TimeUnit.DAYS.toMillis(1)))))
+                        .loadDailyRates(apiDateFormatter.format(nextDate), 0)
+                        .map(rates -> new DailyExRates(nextDate, rates))
+                        .onErrorResumeNext(error -> {
+                                    return NetworkService.getInstance()
+                                            .getNbrbApi()
+                                            .loadDailyRates(apiDateFormatter.format(lastDate), 0)
+                                            .map(rates -> new DailyExRates(lastDate, rates));
+                                }
+                        )
                         .subscribeOn(Schedulers.io())
                 , (dailyExRates, dailyExRates2) -> {
 
@@ -76,12 +84,10 @@ public class MainViewModel extends ViewModel {
                     List<Currency> todayList = dailyExRates.getCurrencyList();
                     List<Currency> anotherDayList = dailyExRates2.getCurrencyList();
 
-                    String[] s1 = dailyExRates.getDate().split("/");
+                    SimpleDateFormat uiDateFormatter = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
 
-                    String[] s2 = dailyExRates2.getDate().split("/");
-
-                    String todayDate = String.format(PATTERN_FORMAT_STRING, s1[1], s1[0], s1[2]);
-                    String anotherDate = String.format(PATTERN_FORMAT_STRING, s2[1], s2[0], s2[2]);
+                    String todayDate = uiDateFormatter.format(dailyExRates.getDate());
+                    String anotherDate = uiDateFormatter.format(dailyExRates2.getDate());
 
                     SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
 
@@ -114,6 +120,7 @@ public class MainViewModel extends ViewModel {
                     SharedPreferences orderPreferences = context.getSharedPreferences(App.PREFERENCES_CURRENCY_ORDER,
                             Context.MODE_PRIVATE);
 
+                    //noinspection ComparatorCombinators
                     Collections.sort(todayList, (o1, o2) -> orderPreferences.getInt(o1.getCharCode(), 0) -
                             orderPreferences.getInt(o2.getCharCode(), 0));
 
@@ -122,9 +129,8 @@ public class MainViewModel extends ViewModel {
                     list.add(todayDate);
                     list.add(anotherDate);
                     Collections.sort(list, (o1, o2) -> {
-                        dateFormat.applyPattern("dd.MM.yyyy");
                         try {
-                            return dateFormat.parse(o1).compareTo(dateFormat.parse(o2));
+                            return Objects.requireNonNull(uiDateFormatter.parse(o1)).compareTo(uiDateFormatter.parse(o2));
                         } catch (ParseException e) {
                             throw new IllegalArgumentException(e);
                         }

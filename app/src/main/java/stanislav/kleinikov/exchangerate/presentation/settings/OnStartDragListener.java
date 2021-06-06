@@ -1,6 +1,6 @@
-package stanislav.kleinikov.exchangerate.ui.settings;
+package stanislav.kleinikov.exchangerate.presentation.settings;
 
-import android.support.v7.widget.RecyclerView;
+import androidx.recyclerview.widget.RecyclerView;
 
 public interface OnStartDragListener {
 

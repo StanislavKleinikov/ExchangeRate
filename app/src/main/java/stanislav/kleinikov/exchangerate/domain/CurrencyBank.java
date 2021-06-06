@@ -14,7 +14,6 @@ public class CurrencyBank {
     private SparseArray<Map<String, BigDecimal>> mRates;
 
     private CurrencyBank() {
-
     }
 
     private static final class CurrencyBankHolder {

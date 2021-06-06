@@ -1,37 +1,32 @@
 package stanislav.kleinikov.exchangerate.domain;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
-import org.simpleframework.xml.Attribute;
-import org.simpleframework.xml.ElementList;
-import org.simpleframework.xml.Root;
-
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-@Root
+@SuppressWarnings("unused")
 public class DailyExRates {
 
-    @Attribute(name = "Date")
-    private String mDate;
+    private Date mDate;
 
-    @ElementList(inline = true, entry = "Currency")
-    private List<Currency> mCurrencyList;
+    private final List<Currency> mCurrencyList;
 
-    private DailyExRates() {
-        mCurrencyList = new ArrayList<>();
+    public DailyExRates(Date date, List<Currency> currencies) {
+        mDate = date;
+        mCurrencyList = currencies;
     }
 
     public List<Currency> getCurrencyList() {
         return mCurrencyList;
     }
 
-    public String getDate() {
+    public Date getDate() {
         return mDate;
     }
 
-    public void setDate(String date) {
+    public void setDate(Date date) {
         mDate = date;
     }
 

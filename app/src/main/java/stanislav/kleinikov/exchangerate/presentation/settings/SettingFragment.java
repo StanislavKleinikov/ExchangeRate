@@ -1,4 +1,4 @@
-package stanislav.kleinikov.exchangerate.ui.settings;
+package stanislav.kleinikov.exchangerate.presentation.settings;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -6,14 +6,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.SwitchCompat;
-import android.support.v7.widget.helper.ItemTouchHelper;
 
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
@@ -28,7 +20,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -39,13 +39,10 @@ import stanislav.kleinikov.exchangerate.domain.CurrencyBank;
 
 public class SettingFragment extends Fragment implements OnStartDragListener {
 
-    private Context mContext;
     private ItemTouchHelper mHelper;
     private SharedPreferences mPreferences;
-    private CurrencyAdapter mAdapter;
     private SparseBooleanArray mVisibilityList;
     private List<Currency> mCurrencyList;
-
 
     public static SettingFragment newInstance() {
         return new SettingFragment();
@@ -56,67 +53,63 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        mContext = context;
-    }
-
-    @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-        setRetainInstance(true);
-        mPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
-        mCurrencyList = new ArrayList<>(CurrencyBank.getInstance().getCurrencyList());
-        mVisibilityList = new SparseBooleanArray(mCurrencyList.size());
-        for (Currency currency : mCurrencyList) {
-            mVisibilityList.put(currency.getId(), mPreferences.getBoolean(currency.getCharCode(), false));
-        }
-        mAdapter = new CurrencyAdapter(this);
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_settings, container, false);
-        RecyclerView recyclerView = view.findViewById(R.id.settings_recycler_view);
-        recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
-
-        recyclerView.setAdapter(mAdapter);
-        CurrencyItemTouchCallback rateItemTouchCallback = new CurrencyItemTouchCallback(mAdapter);
-        mHelper = new ItemTouchHelper(rateItemTouchCallback);
-        mHelper.attachToRecyclerView(recyclerView);
-        return view;
+        return inflater.inflate(R.layout.fragment_settings, container, false);
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        mCurrencyList = new ViewModelProvider(this).get(SettingViewModel.class).currencyList;
+
+        mVisibilityList = new SparseBooleanArray(mCurrencyList.size());
+        for (Currency currency : mCurrencyList) {
+            mVisibilityList.put(currency.getId(), mPreferences.getBoolean(currency.getCharCode(), false));
+        }
+
+        RecyclerView recyclerView = view.findViewById(R.id.settings_recycler_view);
+        CurrencyAdapter mAdapter = new CurrencyAdapter(this);
+        CurrencyItemTouchCallback rateItemTouchCallback = new CurrencyItemTouchCallback(mAdapter);
+        mHelper = new ItemTouchHelper(rateItemTouchCallback);
+        mHelper.attachToRecyclerView(recyclerView);
+        recyclerView.setAdapter(mAdapter);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.menu_settings, menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
-        switch (itemId) {
-            case R.id.save:
-                SharedPreferences.Editor visibilityEditor = mPreferences.edit();
-                SharedPreferences orderPreferences = mContext.getSharedPreferences(App.PREFERENCES_CURRENCY_ORDER, Context.MODE_PRIVATE);
-                SharedPreferences.Editor orderEditor = orderPreferences.edit();
-                for (int i = 0; i < mCurrencyList.size(); i++) {
-                    Currency currency = mCurrencyList.get(i);
-                    visibilityEditor.putBoolean(currency.getCharCode(), mVisibilityList.get(currency.getId()));
-                    orderEditor.putInt(currency.getCharCode(), i);
-                }
+        if (itemId == R.id.save) {
+            SharedPreferences.Editor visibilityEditor = mPreferences.edit();
+            SharedPreferences orderPreferences = requireContext().getSharedPreferences(App.PREFERENCES_CURRENCY_ORDER, Context.MODE_PRIVATE);
+            SharedPreferences.Editor orderEditor = orderPreferences.edit();
+            for (int i = 0; i < mCurrencyList.size(); i++) {
+                Currency currency = mCurrencyList.get(i);
+                visibilityEditor.putBoolean(currency.getCharCode(), mVisibilityList.get(currency.getId()));
+                orderEditor.putInt(currency.getCharCode(), i);
+            }
 
-                visibilityEditor.apply();
-                orderEditor.apply();
-                CurrencyBank.getInstance().setCurrencyList(mCurrencyList);
-                Toast.makeText(mContext, getString(R.string.toast_saved), Toast.LENGTH_SHORT).show();
-                ((SettingActivity) mContext).setResult(Activity.RESULT_OK);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+            visibilityEditor.apply();
+            orderEditor.apply();
+            CurrencyBank.getInstance().setCurrencyList(mCurrencyList);
+            Toast.makeText(requireContext(), getString(R.string.toast_saved), Toast.LENGTH_SHORT).show();
+            ((SettingActivity) requireContext()).setResult(Activity.RESULT_OK);
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -130,7 +123,6 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
         private CurrencyAdapter(OnStartDragListener dragStartListener) {
             mDragStartListener = dragStartListener;
         }
-
 
         @NonNull
         @Override
@@ -173,10 +165,10 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
     }
 
     private class CurrencyHolder extends RecyclerView.ViewHolder implements CompoundButton.OnCheckedChangeListener {
-        private TextView mCharCodeTV;
-        private TextView mScaleTV;
-        private ImageView imageView;
-        private SwitchCompat visibilitySW;
+        private final TextView mCharCodeTV;
+        private final TextView mScaleTV;
+        private final ImageView imageView;
+        private final SwitchCompat visibilitySW;
         private Currency mCurrency;
 
         CurrencyHolder(LayoutInflater inflater, ViewGroup parent) {
@@ -205,7 +197,7 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
 
     private class CurrencyItemTouchCallback extends ItemTouchHelper.Callback {
 
-        private CurrencyAdapter mAdapter;
+        private final CurrencyAdapter mAdapter;
 
         private CurrencyItemTouchCallback(CurrencyAdapter adapter) {
             mAdapter = adapter;
@@ -228,7 +220,7 @@ public class SettingFragment extends Fragment implements OnStartDragListener {
         @Override
         public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder
                 viewHolder, @NonNull RecyclerView.ViewHolder viewHolder1) {
-            mAdapter.onItemMove(viewHolder.getAdapterPosition(), viewHolder1.getAdapterPosition());
+            mAdapter.onItemMove(viewHolder.getBindingAdapterPosition(), viewHolder1.getBindingAdapterPosition());
             return true;
         }
 

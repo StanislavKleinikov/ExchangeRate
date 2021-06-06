@@ -1,7 +1,6 @@
 package stanislav.kleinikov.exchangerate.application;
 
 import android.app.Application;
-import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import stanislav.kleinikov.exchangerate.R;

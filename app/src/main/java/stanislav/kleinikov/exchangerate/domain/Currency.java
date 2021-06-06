@@ -1,31 +1,29 @@
 package stanislav.kleinikov.exchangerate.domain;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
-import org.simpleframework.xml.Attribute;
-import org.simpleframework.xml.Element;
-import org.simpleframework.xml.Root;
+import com.squareup.moshi.Json;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.Objects;
 
-@Root(strict = false)
+@SuppressWarnings("unused")
 public class Currency {
-    @Attribute(name = "Id", required = false)
+    @Json(name = "Cur_ID")
     private int mId;
-    @Element(name = "NumCode", required = false)
-    private String mNumCode;
-    @Element(name = "CharCode", required = false)
+    @Json(name = "Date")
+    private Date mDate;
+    @Json(name = "Cur_Abbreviation")
     private String mCharCode;
-    @Element(name = "Scale", required = false)
+    @Json(name = "Cur_Scale")
     private int mScale;
-    @Element(name = "Name", required = false)
+    @Json(name = "Cur_Name")
     private String mName;
-    @Element(name = "Rate", required = false)
+    @Json(name = "Cur_OfficialRate")
     private BigDecimal mRate;
 
     public Currency() {
-
     }
 
     public int getId() {
@@ -36,12 +34,12 @@ public class Currency {
         mId = id;
     }
 
-    public String getNumCode() {
-        return mNumCode;
+    public Date getDate() {
+        return mDate;
     }
 
-    public void setNumCode(String numCode) {
-        mNumCode = numCode;
+    public void setDate(Date date) {
+        mDate = date;
     }
 
     public String getCharCode() {
@@ -83,7 +81,7 @@ public class Currency {
         Currency currency = (Currency) o;
         return mId == currency.mId &&
                 mScale == currency.mScale &&
-                Objects.equals(mNumCode, currency.mNumCode) &&
+                Objects.equals(mDate, currency.mDate) &&
                 Objects.equals(mCharCode, currency.mCharCode) &&
                 Objects.equals(mName, currency.mName) &&
                 Objects.equals(mRate, currency.mRate);
@@ -91,7 +89,7 @@ public class Currency {
 
     @Override
     public int hashCode() {
-        return Objects.hash(mId, mNumCode, mCharCode, mScale, mName, mRate);
+        return Objects.hash(mId, mDate, mCharCode, mScale, mName, mRate);
     }
 
     @NonNull
@@ -99,7 +97,7 @@ public class Currency {
     public String toString() {
         return "Currency{" +
                 "mId=" + mId +
-                ", mNumCode='" + mNumCode + '\'' +
+                ", mNumCode='" + mDate + '\'' +
                 ", mCharCode='" + mCharCode + '\'' +
                 ", mScale=" + mScale +
                 ", mName='" + mName + '\'' +
