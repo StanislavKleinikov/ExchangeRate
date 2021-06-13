@@ -1,16 +1,13 @@
 <resources>
     <string name="app_name">Курсы валют</string>
-    <string name="title_activity_settings">Настройка валют</string>
+    <string name="title_main">Курсы валют</string>
+    <string name="title_settings">Настройка валют</string>
+    <string name="load_failed">Не удалось загрузить данные</string>
 
-
-    <string name="format_scale" translatable="false">%1$d %2$s</string>
-
+    <string name="format_scale" translatable="false">%1$s %2$s</string>
 
     <!-- String related to menu -->
-
     <string name="settings">Настройки</string>
     <string name="save">Сохранить</string>
-    <string name="toast_saved">Настройки сохранены</string>
-    <string name="load_failed">Не удалось загрузить данные</string>
 
 </resources>

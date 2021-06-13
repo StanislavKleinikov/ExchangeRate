@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="USD"
+        android:title="1 доллар США"
+        android:order="1" />
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="EUR"
+        android:order="2" />
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="RUB"
+        android:order="3" />
+</PreferenceScreen>
